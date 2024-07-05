@@ -11,7 +11,7 @@ wgs84 = wgs84Ellipsoid("meter");
 %--------------------------------------------------
 [x, x_geo] = receiversPositionFunction();
 
-sig_source = signalSourceFunction(12);
+sig_source = signalSourceFunction(15);
 %--------------------------------------------------
 %OPÓŹNIENIA
 delays = signalSimFunction(x, x_geo, sig_source, c);
@@ -61,6 +61,7 @@ y_nad = [yNorth_nadajnik, x_hat_opt(2)];
 z_nad = [zUp_nadajnik, x_hat_opt(3)];
 
 figure;
+
 scatter3(x(1, 2:5), x(2, 2:5), x(3, 2:5), 100, 'filled');
 xlabel('East [m]');
 ylabel('North [m]');
@@ -132,7 +133,7 @@ surf(X_testpoints, Y_testpoints, Z_testpoints);
 colorbar;
 hold on;
 
-plot3(x_optimal, y_optimal, minZ, 'r.', 'MarkerSize', 20);
+plot3(x_optimal, y_optimal, minZ, 'g.', 'MarkerSize', 20);
 hold on;
 
 [maxZ, maxIdx] = max(Z_testpoints(:));
@@ -141,6 +142,6 @@ maxZhub = [maxZ maxZ maxZ maxZ];
 plot3(x(1, 2:5), x(2, 2:5), maxZhub, '^black', 'MarkerSize', 5, 'MarkerFaceColor', 'yellow');
 
 hold on
-plot3(xEast_nadajnik, yNorth_nadajnik, minZ, 'g.', 'MarkerSize', 20);
+plot3(xEast_nadajnik, yNorth_nadajnik, minZ, 'r.', 'MarkerSize', 20);
 legend(' ', 'Wyestymowana lokalizacja nad.', 'Realna lokalizacja nad.');
 
