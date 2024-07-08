@@ -1,4 +1,4 @@
-function [x, x_geo] = receiversPositionFunction()
+function [x_car, x_geo] = receiversPositionFunction()
 
     %Odbiorniki:
     phi_oblot = 53.009528388;
@@ -20,7 +20,7 @@ function [x, x_geo] = receiversPositionFunction()
     %PUNKT ODNIESIENIA
     phi_ref = 53.01735;
     lambda_ref = 20.90708;
-    h_ref = 120;
+    h_ref = 0;
     
     %Obliczanie ENU:
     wgs84 = wgs84Ellipsoid("meter");
@@ -38,6 +38,6 @@ function [x, x_geo] = receiversPositionFunction()
 
     %PIERWSZYA KOLUMNA TO PUNKT ODNIESIENIA!!!
 
-    x = [xEast_ref xEast_oblot xEast_wieza xEast_internat xEast_szpital;yNorth_ref yNorth_oblot yNorth_wieza yNorth_internat yNorth_szpital;zUp_ref zUp_oblot zUp_wieza zUp_internat zUp_szpital];
+    x_car = [xEast_ref xEast_oblot xEast_wieza xEast_internat xEast_szpital;yNorth_ref yNorth_oblot yNorth_wieza yNorth_internat yNorth_szpital;zUp_ref zUp_oblot zUp_wieza zUp_internat zUp_szpital];
     x_geo = [phi_ref phi_oblot phi_wieza phi_internat phi_szpital;lambda_ref lambda_oblot lambda_wieza lambda_internat lambda_szpital;h_ref h_oblot h_wieza h_internat h_szpital];
 end

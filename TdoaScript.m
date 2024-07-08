@@ -1,6 +1,12 @@
+%wczytanie pliku z sygnałem dvbt
+
+[signal_dvbt, fs, fc] = loadDVBTFunction('dvbt_signal.mat');
+
 %czestotliwośc próbkowania
-fs = 10^8;
-duration = 0.1;
+
+% fs = 10^8;
+duration = 0.15;
+
 %prędkośc propagacji sygnału
 c = 3*(10^8);
 
@@ -9,31 +15,34 @@ wgs84 = wgs84Ellipsoid("meter");
 
 %NADAJNIKI I ODBIORNIKI
 %--------------------------------------------------
-[x, x_geo] = receiversPositionFunction();
+[x_car, x_geo] = receiversPositionFunction();
 
-sig_source = signalSourceFunction(15);
+sig_source = signalSourceFunction(2);
 %--------------------------------------------------
 %OPÓŹNIENIA
-delays = signalSimFunction(x, x_geo, sig_source, c);
+delays = signalSimFunction(x_car, x_geo, sig_source, c);
 
 %--------------------------------------------------------------------------
 %KORELACJE                                                                |
 %--------------------------------------------------------------------------
 
-TDOAs = getTDOAsXcorr(duration, delays, fs);
+TDOAs = getTDOAsXcorr(duration, delays, fs, signal_dvbt);
 
 %==========================================================================
 %TOA - TOA                                                                |
 %==========================================================================
 
-%TDOAs = getTDOAsTOAs(delays);
+% TDOAs = getTDOAsTOAs(delays);
 
 %--------------------------------------------------------------------------
+
+TDOAs
+
 x0 = [0; 0; 0]; 
 
 options = optimoptions('fminunc','Algorithm','quasi-newton','Display','iter');
 
-[x_hat_opt, fval] = fminunc(@(x_hat) costFunctionLS_TDOA(x_hat, x, TDOAs, c), x0, options);
+[x_hat_opt, fval] = fminunc(@(x_hat) costFunctionLS_TDOA(x_hat, x_car, TDOAs, c), x0, options);
 
 
 % Wyświetl wyniki
@@ -53,7 +62,7 @@ format shortG
 disp(lat_miara);
 disp(lon_miara);
 disp(h_miara);
-disp('Błąd estymaty wynosił [w metrach]:');
+disp('Błąd estymaty (fminunc) [w metrach]:');
 disp(norm(x_hat_opt - nad_coord));
 
 x_nad = [xEast_nadajnik, x_hat_opt(1)];
@@ -62,7 +71,7 @@ z_nad = [zUp_nadajnik, x_hat_opt(3)];
 
 figure;
 
-scatter3(x(1, 2:5), x(2, 2:5), x(3, 2:5), 100, 'filled');
+scatter3(x_car(1, 2:5), x_car(2, 2:5), x_car(3, 2:5), 100, 'filled');
 xlabel('East [m]');
 ylabel('North [m]');
 zlabel('Hight [m]');
@@ -79,10 +88,10 @@ legend('Odbiorniki', 'Nadajnik (wpisany)', 'Nadajnik (estymata)');
 % WYKRES FUNKCJI KOSZTU:
 %-----------------------------------------------------------------------------
 
-min_x_receiver = min(x(1, 2:5));
-max_x_receiver = max(x(1, 2:5));
-min_y_receiver = min(x(2, 2:5));
-max_y_receiver = max(x(2, 2:5));
+min_x_receiver = min(x_car(1, 2:5));
+max_x_receiver = max(x_car(1, 2:5));
+min_y_receiver = min(x_car(2, 2:5));
+max_y_receiver = max(x_car(2, 2:5));
 
 min_x_surf = 0;
 max_x_surf = 0;
@@ -120,7 +129,7 @@ Z_testpoints = zeros(size(X_testpoints));
 
 for i = 1:numel(X_testpoints)
     x_hat = [X_testpoints(i); Y_testpoints(i); zUp_nadajnik];
-    Z_testpoints(i) = costFunctionLS_TDOA(x_hat, x, TDOAs, c);
+    Z_testpoints(i) = costFunctionLS_TDOA(x_hat, x_car, TDOAs, c);
 end
 
 [minZ, minIdx] = min(Z_testpoints(:));
@@ -139,9 +148,12 @@ hold on;
 [maxZ, maxIdx] = max(Z_testpoints(:));
 maxZhub = [maxZ maxZ maxZ maxZ];
 
-plot3(x(1, 2:5), x(2, 2:5), maxZhub, '^black', 'MarkerSize', 5, 'MarkerFaceColor', 'yellow');
+plot3(x_car(1, 2:5), x_car(2, 2:5), maxZhub, '^black', 'MarkerSize', 5, 'MarkerFaceColor', 'yellow');
 
 hold on
 plot3(xEast_nadajnik, yNorth_nadajnik, minZ, 'r.', 'MarkerSize', 20);
-legend(' ', 'Wyestymowana lokalizacja nad.', 'Realna lokalizacja nad.');
+legend(' ', 'Wyestymowana lokalizacja nad.', 'Odbiorniki', 'Realna lokalizacja nad.');
+
+disp('Błąd estymaty (siatka funkcji kosztu) [w metrach]:');
+disp(norm([x_optimal, y_optimal] - [xEast_nadajnik, yNorth_nadajnik]));
 
