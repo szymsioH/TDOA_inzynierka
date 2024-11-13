@@ -8,7 +8,7 @@ function [signal_dvbt, fs, fc] = loadDVBTFunction(file_name)
 
     dvbt_data = load(file_name);
 
-    %x - spróbkowany sygnał
+    %signal_dvbt - spróbkowany sygnał
     %fs - częstotliwość próbkowania
     %fc - częstotliwość nośnej
 

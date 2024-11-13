@@ -1,8 +1,6 @@
 function noise = generateNoise(duration, fs)
-    % Parametry wejściowe:
     %   duration - czas trwania sygnału w sekundach
     %   fs - częstotliwość próbkowania w Hz
-    % Parametry wyjściowe:
     %   signal - struktura zawierająca sygnał i wektor czasu
 
     % Obliczanie liczby próbek
