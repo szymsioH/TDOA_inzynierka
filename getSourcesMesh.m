@@ -60,10 +60,9 @@ function est_errors = getSourcesMesh(x_car, c, fs, signal_dvbt, duration)
 
     hold on;
     plot3(x_car(1, 2:5), x_car(2, 2:5), zeros(1, 4), '^k', 'MarkerSize', 8, 'MarkerFaceColor', 'yellow');
-    legend('Odbiorniki');
+    legend('Nadajniki', 'Odbiorniki');
     
     % ustawienie osi Z
     zlim([min(est_errors), max(est_errors)]);
 
 end
-

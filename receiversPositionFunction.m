@@ -3,19 +3,22 @@ function [x_car, x_geo] = receiversPositionFunction()
     %Odbiorniki:
     phi_oblot = 53.009528388;
     lambda_oblot = 20.9263071083;
-    h_oblot = 116.2;
+%     h_oblot = 116.2;
+    h_oblot = 0;
     
     phi_wieza = 53.013698444;
     lambda_wieza = 20.9306295361;
-    h_wieza = 119.1;
+%     h_wieza = 119.1;
+    h_wieza = 0;
     
     phi_internat = 53.014901583 ;
     lambda_internat = 20.8811312194;
-    h_internat = 120;
+    h_internat = 0;
     
     phi_szpital = 53.028219027;
     lambda_szpital = 20.8953601972 ;
-    h_szpital = 118.8;
+%     h_szpital = 118.8;
+    h_szpital = 0;
 
     %PUNKT ODNIESIENIA
     phi_ref = 53.01735;

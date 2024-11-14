@@ -17,10 +17,10 @@ wgs84 = wgs84Ellipsoid("meter");
 %--------------------------------------------------
 [x_car, x_geo] = receiversPositionFunction();
 
-sig_source = signalSourceFunction(17);
+sig_source = signalSourceFunction(27);
 %--------------------------------------------------
 %OPÓŹNIENIA
-delays = signalSimFunction(x_car, x_geo, sig_source, c);
+[delays, xEast_nadajnik,yNorth_nadajnik] = signalSimFunction(x_car, x_geo, sig_source, c);
 
 %--------------------------------------------------------------------------
 %KORELACJE                                                                |
@@ -38,7 +38,7 @@ TDOAs = getTDOAsXcorr(duration, delays, fs, signal_dvbt, -3);
 
 TDOAs;
 
-x0 = [0; 0; 0];
+x0 = [0; 0];
 options = optimoptions('fminunc','Algorithm','quasi-newton','Display','iter');
 
 [x_hat_opt, fval] = fminunc(@(x_hat) costFunctionLS_TDOA(x_hat, x_car, TDOAs, c), x0, options);
@@ -49,20 +49,18 @@ options = optimoptions('fminunc','Algorithm','quasi-newton','Display','iter');
 x_nad = [xEast_nadajnik, x_hat_opt(1)];
 y_nad = [yNorth_nadajnik, x_hat_opt(2)];
 %z_nad = [zUp_nadajnik, x_hat_opt(3)];
-z_nad = [zUp_nadajnik, 120];
 
 figure('Name', 'fminunc estimation');
 
-scatter3(x_car(1, 2:5), x_car(2, 2:5), x_car(3, 2:5), 100, 'filled');
+scatter(x_car(1, 2:5), x_car(2, 2:5), 100, 'filled');
 xlabel('East [m]');
 ylabel('North [m]');
-zlabel('Hight [m]');
 title('Estymata lokalizacji stacji nadawczej');
 grid on;
 hold on
-plot3(xEast_nadajnik, yNorth_nadajnik, zUp_nadajnik, 'r.', 'MarkerSize', 20)
+plot(xEast_nadajnik, yNorth_nadajnik, 'r.', 'MarkerSize', 20)
 hold on
-plot3(x_hat_opt(1), x_hat_opt(2), x_hat_opt(3),'g.', 'MarkerSize', 20)
+plot(x_hat_opt(1), x_hat_opt(2), 'g.', 'MarkerSize', 20)
 % plot3(x_hat_opt(1), x_hat_opt(2), 120,'g.', 'MarkerSize', 20)
 legend('Odbiorniki', 'Nadajnik (wpisany)', 'Nadajnik (estymata)');
 
@@ -76,33 +74,55 @@ max_x_receiver = max(x_car(1, 2:5));
 min_y_receiver = min(x_car(2, 2:5));
 max_y_receiver = max(x_car(2, 2:5));
 
-min_x_surf = 0;
-max_x_surf = 0;
-min_y_surf = 0;
-max_y_surf = 0;
+min_x_surf = min_x_receiver;
+max_x_surf = max_x_receiver;
+min_y_surf = min_y_receiver;
+max_y_surf = max_y_receiver;
 
-if min_x_receiver > xEast_nadajnik
-    min_x_surf = xEast_nadajnik;
-    max_x_surf = max_x_receiver;
-elseif xEast_nadajnik > max_x_receiver
-    max_x_surf = xEast_nadajnik;
-    min_x_surf = min_x_receiver;
-elseif (min_x_receiver <= xEast_nadajnik) && (xEast_nadajnik <= max_x_receiver)
-    max_x_surf = max_x_receiver;
-    min_x_surf = min_x_receiver;
+% zmienna jest prawdziwa, kiedy błąd estymaty przekracza 100 km
+megaerror = false;
+
+if (abs(x_hat_opt(1)) > 100000) || (abs(x_hat_opt(2)) > 100000)
+    megaerror = true;
+    if (min_x_receiver > xEast_nadajnik) && (min_x_receiver > x_hat_opt(1))
+        min_x_surf = xEast_nadajnik;
+    elseif xEast_nadajnik > max_x_receiver
+        max_x_surf = xEast_nadajnik;
+    end
+    if min_y_receiver > yNorth_nadajnik
+        min_y_surf = yNorth_nadajnik;
+    elseif yNorth_nadajnik > max_y_receiver
+        max_y_surf = yNorth_nadajnik;
+    end
+else
+    if x_hat_opt(1) < xEast_nadajnik
+        if x_hat_opt(1) < min_x_surf
+            min_x_surf = x_hat_opt(1);
+        elseif xEast_nadajnik > max_x_surf
+            max_x_surf = xEast_nadajnik;
+        end
+    elseif x_hat_opt(1) > xEast_nadajnik
+        if x_hat_opt(1) > max_x_surf
+            max_x_surf = x_hat_opt(1);
+        elseif xEast_nadajnik < max_x_surf
+            min_x_surf = xEast_nadajnik;
+        end
+    end
+    
+    if x_hat_opt(2) < yNorth_nadajnik
+        if x_hat_opt(2) < min_y_surf
+            min_y_surf = x_hat_opt(2);
+        elseif yNorth_nadajnik > max_y_surf
+            max_y_surf = yNorth_nadajnik;
+        end
+    elseif x_hat_opt(2) > yNorth_nadajnik
+        if x_hat_opt(2) > max_y_surf
+            max_y_surf = x_hat_opt(2);
+        elseif yNorth_nadajnik < max_y_surf
+            min_y_surf = yNorth_nadajnik;
+        end
+    end
 end
-
-if min_y_receiver > yNorth_nadajnik
-    min_y_surf = yNorth_nadajnik;
-    max_y_surf = max_y_receiver;
-elseif yNorth_nadajnik > max_y_receiver
-    max_y_surf = yNorth_nadajnik;
-    min_y_surf = min_y_receiver;
-elseif (min_y_receiver <= yNorth_nadajnik) && (yNorth_nadajnik <= max_y_receiver)
-    max_y_surf = max_y_receiver;
-    min_y_surf = min_y_receiver;
-end
-
 
 % surf_x_range = min_x_surf-10:(max_x_surf-min_x_surf)/10^2:max_x_surf+10;
 % surf_y_range = min_y_surf-10:(max_y_surf-min_y_surf)/10^2:max_y_surf+10;
@@ -117,7 +137,7 @@ surf_y_range = min_y_surf-100:20:max_y_surf+100;
 Z_testpoints = zeros(size(X_testpoints));
 
 for i = 1:numel(X_testpoints)
-    x_hat = [X_testpoints(i); Y_testpoints(i); zUp_nadajnik];
+    x_hat = [X_testpoints(i); Y_testpoints(i)];
     %x_hat = [X_testpoints(i); Y_testpoints(i)];
     Z_testpoints(i) = costFunctionLS_TDOA(x_hat, x_car, TDOAs, c);
 end
@@ -133,8 +153,10 @@ colorbar;
 shading interp;
 hold on;
 
-plot3(x_optimal, y_optimal, minZ, 'g.', 'MarkerSize', 20);
-hold on;
+if megaerror == false
+    plot3(x_optimal, y_optimal, minZ, 'g.', 'MarkerSize', 20);
+    hold on;
+end
 
 [maxZ, maxIdx] = max(Z_testpoints(:));
 maxZhub = [maxZ maxZ maxZ maxZ];
@@ -145,27 +167,25 @@ hold on
 plot3(xEast_nadajnik, yNorth_nadajnik, maxZhub, 'r.', 'MarkerSize', 20);
 legend(' ', 'Wyestymowana lokalizacja nad.', 'Odbiorniki', 'Realna lokalizacja nad.');
 
-% Siatka nadajników:
+% % Siatka nadajników:
 % est_errors = getSourcesMesh(x_car, c, fs, signal_dvbt, duration);
 
 % Wyświetl wyniki
 disp('Wpisane współżędne nadajnika (kartezjańskie):');
 [xEast_nadajnik,yNorth_nadajnik,zUp_nadajnik] = geodetic2enu(sig_source(1),sig_source(2),sig_source(3),x_geo(1, 1),x_geo(2, 1),x_geo(3, 1),wgs84);
-nad_coord = [xEast_nadajnik; yNorth_nadajnik; zUp_nadajnik];
+nad_coord = [xEast_nadajnik; yNorth_nadajnik];
 disp(nad_coord);
 disp('Wyestymowane współżędne nadajnika (kartezjańskie):');
 disp(x_hat_opt);
 disp('Wpisane koordynaty nadajnika (geodetic)');
 disp(sig_source(1));
 disp(sig_source(2));
-disp(sig_source(3));
 disp('Wyestymowane koordynaty nadajnika (geodetic):');
 format shortG
-[lat_miara,lon_miara,h_miara] = enu2geodetic(x_hat_opt(1),x_hat_opt(2),x_hat_opt(3),x_geo(1, 1),x_geo(2, 1),x_geo(3, 1),wgs84);
+[lat_miara,lon_miara,h_miara] = enu2geodetic(x_hat_opt(1),x_hat_opt(2),0,x_geo(1, 1),x_geo(2, 1),x_geo(3, 1),wgs84);
 % [lat_miara,lon_miara,h_miara] = enu2geodetic(x_hat_opt(1),x_hat_opt(2),120,x_geo(1, 1),x_geo(2, 1),x_geo(3, 1),wgs84);
 disp(lat_miara);
 disp(lon_miara);
-disp(h_miara);
 disp('Błąd estymaty (fminunc) [w metrach]:');
 disp(norm(x_hat_opt(1:2) - nad_coord(1:2)));
 disp('Błąd estymaty (siatka funkcji kosztu) [w metrach]:');
