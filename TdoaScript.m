@@ -17,7 +17,7 @@ wgs84 = wgs84Ellipsoid("meter");
 %--------------------------------------------------
 [x_car, x_geo] = receiversPositionFunction();
 
-sig_source = signalSourceFunction(27);
+sig_source = signalSourceFunction(16);
 %--------------------------------------------------
 %OPÓŹNIENIA
 [delays, xEast_nadajnik,yNorth_nadajnik] = signalSimFunction(x_car, x_geo, sig_source, c);
@@ -26,7 +26,7 @@ sig_source = signalSourceFunction(27);
 %KORELACJE                                                                |
 %--------------------------------------------------------------------------
 
-TDOAs = getTDOAsXcorr(duration, delays, fs, signal_dvbt, -3);
+TDOAs = getTDOAsXcorr(duration, delays, fs, signal_dvbt, 3);
 
 %==========================================================================
 %TOA - TOA                                                                |
@@ -43,26 +43,23 @@ options = optimoptions('fminunc','Algorithm','quasi-newton','Display','iter');
 
 [x_hat_opt, fval] = fminunc(@(x_hat) costFunctionLS_TDOA(x_hat, x_car, TDOAs, c), x0, options);
 
-% options = optimset('Display', 'iter');
-% x_hat_opt = fminsearch(@(x_hat) costFunctionLS_TDOA(x_hat, x_car, TDOAs, c), x0, options);
-
 x_nad = [xEast_nadajnik, x_hat_opt(1)];
 y_nad = [yNorth_nadajnik, x_hat_opt(2)];
 %z_nad = [zUp_nadajnik, x_hat_opt(3)];
 
-figure('Name', 'fminunc estimation');
-
-scatter(x_car(1, 2:5), x_car(2, 2:5), 100, 'filled');
-xlabel('East [m]');
-ylabel('North [m]');
-title('Estymata lokalizacji stacji nadawczej');
-grid on;
-hold on
-plot(xEast_nadajnik, yNorth_nadajnik, 'r.', 'MarkerSize', 20)
-hold on
-plot(x_hat_opt(1), x_hat_opt(2), 'g.', 'MarkerSize', 20)
-% plot3(x_hat_opt(1), x_hat_opt(2), 120,'g.', 'MarkerSize', 20)
-legend('Odbiorniki', 'Nadajnik (wpisany)', 'Nadajnik (estymata)');
+% figure('Name', 'fminunc estimation');
+% 
+% scatter(x_car(1, 2:5), x_car(2, 2:5), 100, 'filled');
+% xlabel('East [m]');
+% ylabel('North [m]');
+% title('Estymata lokalizacji stacji nadawczej');
+% grid on;
+% hold on
+% plot(xEast_nadajnik, yNorth_nadajnik, 'r.', 'MarkerSize', 20)
+% hold on
+% plot(x_hat_opt(1), x_hat_opt(2), 'g.', 'MarkerSize', 20)
+% % plot3(x_hat_opt(1), x_hat_opt(2), 120,'g.', 'MarkerSize', 20)
+% legend('Odbiorniki', 'Nadajnik (wpisany)', 'Nadajnik (estymata)');
 
 
 %-----------------------------------------------------------------------------
@@ -147,25 +144,25 @@ end
 x_optimal = X_testpoints(minX, minY);
 y_optimal = Y_testpoints(minX, minY);
 
-figure('Name', 'Cost Function Values Mesh'); 
-surf(X_testpoints, Y_testpoints, Z_testpoints);
-colorbar;
-shading interp;
-hold on;
-
-if megaerror == false
-    plot3(x_optimal, y_optimal, minZ, 'g.', 'MarkerSize', 20);
-    hold on;
-end
-
-[maxZ, maxIdx] = max(Z_testpoints(:));
-maxZhub = [maxZ maxZ maxZ maxZ];
-
-plot3(x_car(1, 2:5), x_car(2, 2:5), maxZhub, '^black', 'MarkerSize', 5, 'MarkerFaceColor', 'yellow');
-
-hold on
-plot3(xEast_nadajnik, yNorth_nadajnik, maxZhub, 'r.', 'MarkerSize', 20);
-legend(' ', 'Wyestymowana lokalizacja nad.', 'Odbiorniki', 'Realna lokalizacja nad.');
+% figure('Name', 'Cost Function Values Mesh'); 
+% surf(X_testpoints, Y_testpoints, Z_testpoints);
+% colorbar;
+% shading interp;
+% hold on;
+% 
+% if megaerror == false
+%     plot3(x_optimal, y_optimal, minZ, 'g.', 'MarkerSize', 20);
+%     hold on;
+% end
+% 
+% [maxZ, maxIdx] = max(Z_testpoints(:));
+% maxZhub = [maxZ maxZ maxZ maxZ];
+% 
+% plot3(x_car(1, 2:5), x_car(2, 2:5), maxZhub, '^black', 'MarkerSize', 5, 'MarkerFaceColor', 'yellow');
+% 
+% hold on
+% plot3(xEast_nadajnik, yNorth_nadajnik, maxZhub, 'r.', 'MarkerSize', 20);
+% legend(' ', 'Wyestymowana lokalizacja nad.', 'Odbiorniki', 'Realna lokalizacja nad.');
 
 % % Siatka nadajników:
 % est_errors = getSourcesMesh(x_car, c, fs, signal_dvbt, duration);
@@ -188,8 +185,8 @@ disp(lat_miara);
 disp(lon_miara);
 disp('Błąd estymaty (fminunc) [w metrach]:');
 disp(norm(x_hat_opt(1:2) - nad_coord(1:2)));
-disp('Błąd estymaty (siatka funkcji kosztu) [w metrach]:');
-disp(norm([x_optimal, y_optimal] - [xEast_nadajnik, yNorth_nadajnik]));
+% disp('Błąd estymaty (siatka funkcji kosztu) [w metrach]:');
+% disp(norm([x_optimal, y_optimal] - [xEast_nadajnik, yNorth_nadajnik]));
 
 % norm([xEast_nadajnik, yNorth_nadajnik, zUp_nadajnik] - (x_car(:, 2).'));
 
