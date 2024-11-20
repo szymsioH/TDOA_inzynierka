@@ -8,10 +8,10 @@ function TDOAs = getTDOAsXcorr(duration, delays, fs, signal, SNRdB)
     os_value = 10; % wartość ile razy zwiększam ilość próbek
     fs = fs * os_value;
     %powielenie próbek sygnału
-    signal = repelem(signal, os_value);
+%     signal = repelem(signal, os_value);
     %interpolacja liniowa
-%     range = 1:(1/os_value):numel(signal);
-%     signal = interp1(signal, range);
+    range = 1:(1/os_value):numel(signal);
+    signal = interp1(signal, range);
     %interpolacja fourierowska
 %     signal = interpft(signal, os_value*numel(signal));
     %zwiększenie liczby próbek z dopasowaniem filtra dolnoprzepustowego
@@ -59,13 +59,13 @@ function TDOAs = getTDOAsXcorr(duration, delays, fs, signal, SNRdB)
     noiseI = (randn(1, numel(sigInternat)) + 1i * randn(1, numel(sigInternat)))/sigReductionVal;
     noiseS = (randn(1, numel(sigSzpital)) + 1i * randn(1, numel(sigSzpital)))/sigReductionVal;
 
-    absNoiseO = abs(real(noiseO));
-    noiseMean2 = mean(absNoiseO);
+%     absNoiseO = abs(real(noiseO));
+%     noiseMean2 = mean(absNoiseO);
 
 %     figure('Name', 'Noise');
 %     plot(real(noiseO))
 
-    SNRreal = 10*log10(sigMean/noiseMean2);
+%     SNRreal = 10*log10(sigMean/noiseMean2);
 
     %dodanie szumu do sygnału
     sigOblot = sigOblot + noiseO;
@@ -83,13 +83,13 @@ function TDOAs = getTDOAsXcorr(duration, delays, fs, signal, SNRdB)
 %     plot(real(sigSzpital))
 
     
-    %wycięcie 4ms fragmętu sygnału
+    %wycięcie 2ms fragmętu sygnału
 
     % Przy sygnale 150ms, 1 ms odpowiada 12800 próbkom, 4 ms odpowiada
     % 51200 próbkom
     size(sigOblot, 2);
 
-    short_part = numel(sigOblot)/50;
+    short_part = numel(sigOblot)/75;
 
     sigOblot = sigOblot(round(numSamples/3):round(numSamples/3) + short_part - 1);
     sigWieza = sigWieza(round(numSamples/3):round(numSamples/3) + short_part - 1);
