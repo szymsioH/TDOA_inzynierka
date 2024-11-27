@@ -17,7 +17,7 @@ wgs84 = wgs84Ellipsoid("meter");
 %--------------------------------------------------
 [x_car, x_geo] = receiversPositionFunction();
 
-sig_source = signalSourceFunction(19);
+sig_source = signalSourceFunction(18);
 %--------------------------------------------------
 %OPÓŹNIENIA
 [delays, xEast_nadajnik,yNorth_nadajnik] = signalSimFunction(x_car, x_geo, sig_source, c);
@@ -27,60 +27,82 @@ nad_coord = [xEast_nadajnik; yNorth_nadajnik];
 %KORELACJE                                                                |
 %--------------------------------------------------------------------------
 
-% list_SDRs = [0, -3, -6, -8, -9, -10];
+% TDOAs = getTDOAsXcorr(duration, delays, fs, signal_dvbt, 3);
 % 
-% est_cords_storage = zeros(50, 2*numel(list_SDRs));
-% est_errors_storage = zeros(50, numel(list_SDRs));
+% x0 = [0; 0];
+% options = optimoptions('fminunc','Algorithm','quasi-newton','Display','iter');
+% [x_hat_opt, fval] = fminunc(@(x_hat) costFunctionLS_TDOA(x_hat, x_car, TDOAs, c), x0, options);
+% 
+% [lat_miara,lon_miara,h_miara] = enu2geodetic(x_hat_opt(1),x_hat_opt(2),0,x_geo(1, 1),x_geo(2, 1),x_geo(3, 1),wgs84);
+% fmu_error = norm(x_hat_opt(1:2) - nad_coord(1:2));
+% 
+% disp("Błąd estymacji [m]: ");
+% disp(fmu_error);
+%==================TURBOPĘTLA=============================================================================
 
-est_cords_storage = zeros(50, 2);
-est_errors_storage = zeros(50, 1);
 
-% for j = list_SDRs
-for i = 1:50
-    TDOAs = getTDOAsXcorr(duration, delays, fs, signal_dvbt, 0);
-    
-    %==========================================================================
-    %TOA - TOA                                                                |
-    %==========================================================================
-    
-    % TDOAs = getTDOAsTOAs(delays);
-    
-    %--------------------------------------------------------------------------
-    
-%     TDOAs;
-    
-    x0 = [0; 0];
-    options = optimoptions('fminunc','Algorithm','quasi-newton','Display','iter');
-    
-    [x_hat_opt, fval] = fminunc(@(x_hat) costFunctionLS_TDOA(x_hat, x_car, TDOAs, c), x0, options);
-    
-%     x_nad = [xEast_nadajnik, x_hat_opt(1)];
-%     y_nad = [yNorth_nadajnik, x_hat_opt(2)];
+%==================PĘTLAx50===============================================================================
 
-    [lat_miara,lon_miara,h_miara] = enu2geodetic(x_hat_opt(1),x_hat_opt(2),0,x_geo(1, 1),x_geo(2, 1),x_geo(3, 1),wgs84);
+list_SDRs = [0 -3 -6 -8 -9 -10];
+
+est_cords_storage = zeros(50*numel(list_SDRs), 2);
+est_errors_storage = zeros(50*numel(list_SDRs), 1);
+
+% est_cords_storage = zeros(50, 2);
+% est_errors_storage = zeros(50, 1);
+
+
+data_index = 0;
+for j = list_SDRs
+    for i = 1:50
+        data_index = data_index + 1;
+        TDOAs = getTDOAsXcorr(duration, delays, fs, signal_dvbt, j);
+        
+        %==========================================================================
+        %TOA - TOA                                                                |
+        %==========================================================================
+        
+        % TDOAs = getTDOAsTOAs(delays);
+        
+        %--------------------------------------------------------------------------
+        
+        TDOAs;
+        
+        x0 = [0; 0];
+        options = optimoptions('fminunc','Algorithm','quasi-newton','Display','iter');
+        [x_hat_opt, fval] = fminunc(@(x_hat) costFunctionLS_TDOA(x_hat, x_car, TDOAs, c), x0, options);
+
+
+%         x_hat_opt = getWLSestimate(TDOAs, x_car, c, fs);
     
-    fmu_error = norm(x_hat_opt(1:2) - nad_coord(1:2));
-    est_cords_storage(i, 1) = lat_miara;
-    est_cords_storage(i, 2) = lon_miara;
-    est_errors_storage(i, 1) = fmu_error;
-%     est_cords_storage(i, (2*(list_SDRs==j))-1) = lat_miara;
-%     est_cords_storage(i, 2*(list_SDRs==j)) = lon_miara;
-%     est_errors_storage(i, list_SDRs==j) = fmu_error;
+        [lat_miara,lon_miara,h_miara] = enu2geodetic(x_hat_opt(1),x_hat_opt(2),0,x_geo(1, 1),x_geo(2, 1),x_geo(3, 1),wgs84);
+        
+        fmu_error = norm(x_hat_opt(1:2) - nad_coord(1:2));
+        est_cords_storage(data_index, 1) = lat_miara;
+        est_cords_storage(data_index, 2) = lon_miara;
+        est_errors_storage(data_index, 1) = fmu_error;
+%         est_cords_storage(i, (2*(find(list_SDRs==j)))-1) = lat_miara;
+%         est_cords_storage(i, 2*(find(list_SDRs==j))) = lon_miara;
+%         est_errors_storage(i, find(list_SDRs==j)) = fmu_error;
+    end
 end
-% end
 
-sqrtsum = 0;
-% deviation_val = zeros(1, numel(list_SDRs));
-% for k = list_SDRs
-sum_err = sum(est_errors_storage(:, 1));
-
-for j = 1:numel(est_errors_storage(:, 1))
-    sqrtsum = sqrtsum + ( est_errors_storage(j) - (sum_err/numel(est_errors_storage)) )^2;
+deviation_val = zeros(numel(list_SDRs), 1);
+for k = list_SDRs
+    sqrtsum = 0;
+%     sum_err = sum(est_errors_storage(:, find(list_SDRs==k)));
+    sum_err = sum(est_errors_storage(50*(find(list_SDRs==k)-1) + 1:50*(find(list_SDRs==k)), 1));
+    
+    for j = (50*(find(list_SDRs==k)-1) + 1):(50*(find(list_SDRs==k)))
+        sqrtsum = sqrtsum + ( est_errors_storage(j, 1) - (sum_err/50) )^2;
+%         sqrtsum = sqrtsum + ( est_errors_storage(j, 1) - (sum_err/numel(est_errors_storage(:, list_SDRs==k))) )^2;
+    end
+    
+%     deviation_val = (sqrtsum/numel(est_errors_storage))^(1/2);
+    deviation_val(find(list_SDRs==k)) = (sqrtsum/50)^(1/2);
 end
+%=========================================================================================================
 
-deviation_val = (sqrtsum/numel(est_errors_storage))^(1/2);
-% deviation_val(list_SDRs==k) = (sqrtsum/numel(est_errors_storage))^(1/2);
-% end
 
 
 %z_nad = [zUp_nadajnik, x_hat_opt(3)];
