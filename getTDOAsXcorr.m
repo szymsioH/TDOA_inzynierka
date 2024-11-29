@@ -1,21 +1,30 @@
-function TDOAs = getTDOAsXcorr(duration, delays, fs, signal, SNRdB)
+function TDOAs = getTDOAsXcorr(duration, delays, fs, signal, SNRdB, os_type, os_value, co_value)
 
     %niedokładności wynikające z częstotliwości próbkowania
     errors_fs = 1/double(fs);
     r_errors_fs = (rand(1, 4) - 0.5)*errors_fs;
 
     %-NADPRÓBKOWANIE---------------------------------------------
-    os_value = 1; % wartość ile razy zwiększam ilość próbek
+    %os_value; % wartość ile razy zwiększam ilość próbek
     fs = fs * os_value;
-    %powielenie próbek sygnału
-%     signal = repelem(signal, os_value);
-    %interpolacja liniowa
-%     range = 1:(1/os_value):numel(signal);
-%     signal = interp1(signal, range);
-    %interpolacja fourierowska
-%     signal = interpft(signal, os_value*numel(signal));
-    %zwiększenie liczby próbek z dopasowaniem filtra dolnoprzepustowego
-%     signal = resample(signal, os_value, 1);
+
+    switch os_type
+        case 1
+            %powielenie próbek sygnału
+            signal = repelem(signal, os_value);
+        case 2
+            %interpolacja liniowa
+            range = 1:(1/os_value):numel(signal);
+            signal = interp1(signal, range);
+        case 3
+            %interpolacja fourierowska
+            signal = interpft(signal, os_value*numel(signal));
+        case 4
+            %zwiększenie liczby próbek z dopasowaniem filtra dolnoprzepustowego
+            signal = resample(signal, os_value, 1);
+        otherwise
+            os_value = 1;
+    end
 
 %     numel(zeros(1, (int64(round(delays(1), strlength(int2str(fs))-1 )*fs)) ))
 %     numel([zeros(1, (int64(round(delays(1), strlength(int2str(fs))-1 )*fs)) ), zeros(1, (int64(round(r_errors_fs(1), strlength(int2str(fs))-1 )*fs)) )])
@@ -108,11 +117,6 @@ function TDOAs = getTDOAsXcorr(duration, delays, fs, signal, SNRdB)
     sigInternat = sigInternat(round(numSamples/3):round(numSamples/3) + short_part - 1);
     sigSzpital = sigSzpital(round(numSamples/3):round(numSamples/3) + short_part - 1);
 
-%     sigOblot = sigOblot(640000:691200);
-%     sigWieza = sigWieza(640000:691200);
-%     sigInternat = sigInternat(640000:691200);
-%     sigSzpital = sigSzpital(640000:691200);
-
 %      figure('Name', 'Oblot Signal (added noise)');
 %      plot(real(sigOblot))
 
@@ -128,7 +132,7 @@ function TDOAs = getTDOAsXcorr(duration, delays, fs, signal, SNRdB)
 
     %-NADPRÓBKOWANIE-KORELACJI------------------------------------------
 
-    co_value = 10;
+    %co_value = 1;
 
     range12 = min(lag12):(1/co_value):max(lag12);
     corr_interp_12 = interp1(lag12, corrval12, range12, 'spline');
@@ -138,19 +142,16 @@ function TDOAs = getTDOAsXcorr(duration, delays, fs, signal, SNRdB)
     corr_interp_14 = interp1(lag14, corrval14, range14, 'spline');
 
 
-%     gaussEqn = 'a*exp(-((x-b)/c)^2)+d';
-% 
-%     [curve3,gof3] = fit(lag12', corrval12',gaussEqn);
-%     figure;
-%     plot(curve3, lag12, corrval12)
-
-
 %     figure('Name', 'Korelacja 12 (ov): ');
 %     stem(range12, corr_interp_12)
 
     [max_corr12, max_idx12] = max(corr_interp_12);
     [max_corr13, max_idx13] = max(corr_interp_13);
     [max_corr14, max_idx14] = max(corr_interp_14);
+
+%     fitted12 = fit(lag12', corrval12', 'smoothingspline');
+%     figure;
+%     plot(fitted12, lag12, real(corrval12))
 
 
     TDOA12 = -range12(max_idx12) / double(fs);
