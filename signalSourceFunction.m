@@ -1,6 +1,6 @@
 function sig_source = signalSourceFunction(k)
 
-%k - numer badanego nadajnika (1 - 15)
+%k - numer badanego nadajnika (1 - 27)
 
 % każdy "storage" odpowiada zestawowi z jednej warstwy na mapie
 % sprawdzić poprawną KOLEJNOŚĆ dodawanych elementów!

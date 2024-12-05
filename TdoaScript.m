@@ -24,7 +24,7 @@ sig_source = signalSourceFunction(19);
 nad_coord = [xEast_nadajnik; yNorth_nadajnik];
 
 %==================POJEDYNCZE-TESTY=======================================================================
-% [TDOAs, corrval12, lag12, corrval13, lag13, corrval14, lag14] = getTDOAsXcorr(duration, delays, fs, signal_dvbt, -6, 1, 1);
+% TDOAs = getTDOAsXcorr(duration, delays, fs, signal_dvbt, -6, 1, 1);
 % 
 % x0 = [0; 0];
 % options = optimoptions('fminunc','Algorithm','quasi-newton','Display','iter');
@@ -116,14 +116,6 @@ for j = list_SDRs
     for i = 1:iter
         data_index = data_index + 1;
         TDOAs = getTDOAsXcorr(duration, delays, fs, signal_dvbt, j, 1, 1, 1);
-        
-%         ==========================================================================
-%         TOA - TOA                                                                |
-%         ==========================================================================
-        
-%         TDOAs = getTDOAsTOAs(delays);
-        
-%         --------------------------------------------------------------------------
         
         TDOAs;
         
