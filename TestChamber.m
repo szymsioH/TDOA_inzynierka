@@ -13,8 +13,14 @@ sig_time_new = numel(signal_dvbt)/50;
 signal = signal_dvbt(int64(numel(signal_dvbt)/3):int64(numel(signal_dvbt)/3 + sig_time_new - 1));
 
 %przesunięcie sygnałów
-distance = 1000; %odległość w m
+distance = 10000; %odległość w m
 delay = distance/c; %opóźnienie w s
+
+os_type = 0; %rodzaj interpolacji
+os_value = 1;
+co_value = 5;
+fs = fs * os_value;
+
 delay_samples = delay*double(fs); %opóźnienie w próbkach
 
 sig_drift = delay_samples - fix(delay_samples);
@@ -24,10 +30,6 @@ xq = 1 + sig_drift:1:numel(signal)-1+sig_drift;
 signal_il = interp1(signal, xq);
 
 signal2 = [zeros(1, round(delay_samples)), signal_il];
-
-os_type = 0;
-os_value = 1;
-fs = fs * os_value;
 
 switch os_type
     case 1
@@ -55,7 +57,7 @@ end
 %dodanie szumu
 SNR_eqalizer = 46.327; %wyrównanie poziomów sygnału i szumu
 
-SNR_list = -50:1:40;
+SNR_list = -30:1:30;
 
 dev_iter = 100; %iteracje
 
@@ -75,11 +77,21 @@ for j = SNR_list
         signal2n = signal2 + noise2;
         
         % snr_value = snr(signal, noise1);
-         
+        
         %korelacja
         [corrval, lag] = xcorr(signaln, signal2n);
+
+        if co_value == 1
+            max_lag = -lag(corrval == max(corrval));
+        else
+            %nadpróbkowanie korelacji
+            rangecorr = min(lag):(1/co_value):max(lag);
+            corrval_itp = interp1(lag, corrval, rangecorr, 'spline');
+
+            [max_corr, max_idx] = max(corrval_itp);
+            max_lag = -rangecorr(corrval == max(corrval));
+        end
         
-        max_lag = -lag(corrval == max(corrval));
         est_delay = double(max_lag)/double(fs);
         
         est_errors(i) = abs(delay - est_delay); %błąd estymaty w sekundach
@@ -100,7 +112,7 @@ end
 
 figure('Name', 'Deviations to SNR');
 plot(SNR_list, devs_list*10^(6)); %w us
-title('1000m, 10fs, 100 iteracji, interp1')
+title('10000m, 10fs, 100 iteracji, interp1')
 xlabel('SNR [dB]')
 ylabel('Dewiacja [us]')
 
