@@ -1,4 +1,4 @@
-clear;
+clear workspace;
 
 %Wczytanie sygnału dvbt
 [signal_dvbt, fs, fc] = loadDVBTFunction('dvbt_signal.mat');
@@ -8,30 +8,35 @@ c = 299792458;
 
 tic
 %skrócenie sygnału do 2ms
-sig_time = (numel(signal_dvbt)/double(fs))*1000; %in ms
+%sig_time = (numel(signal_dvbt)/double(fs))*1000; %in ms
 
 sig_time_new = numel(signal_dvbt)/50;
 
 signal = signal_dvbt(int64(numel(signal_dvbt)/3):int64(numel(signal_dvbt)/3 + sig_time_new - 1));
 
 %przesunięcie sygnałów
-distance = 10000; %odległość w m
+distance = 1000; %odległość w m
 delay = distance/c; %opóźnienie w s
 
 os_type = 2; %rodzaj interpolacji
-os_value = 10 ;
+os_value = 2;
 co_value = 1;
 fs = fs * os_value;
+
+dev_iter = 500; %iteracje
 
 delay_samples = delay*double(fs); %opóźnienie w próbkach
 
 sig_drift = delay_samples - fix(delay_samples);
 
-xq = 1 + sig_drift:1:numel(signal)-1+sig_drift;
+% xq = 1 + sig_drift:1:numel(signal)-1+sig_drift;
+% 
+% signal_il = interp1(signal, xq);
+% 
+% signal2 = [zeros(1, round(delay_samples)), signal_il];
 
-signal_il = interp1(signal, xq);
-
-signal2 = [zeros(1, round(delay_samples)), signal_il];
+signal2 = [zeros(1, round(delay_samples)), signal];
+signal = [signal, zeros(1, round(delay_samples))];
 
 switch os_type
     case 1
@@ -56,17 +61,27 @@ switch os_type
         os_value = 1;
 end
 
-%dodanie szumu
-SNR_eqalizer = 46.327; %wyrównanie poziomów sygnału i szumu
 
-SNR_list1 = -40:2:-24;
+
+noise = (randn(1, numel(signal)) + 1i*randn(1, numel(signal)));
+noise2 = (randn(1, numel(signal2)) + 1i*randn(1, numel(signal2)));
+
+%dodanie szumu
+snr_check = snr(signal, noise);
+snr2_check = snr(signal2, noise2);
+
+SNR_eqalizer1 = snr_check; %wyrównanie poziomów sygnału i szumu
+SNR_eqalizer2 = snr2_check;
+
+SNR_list1 = -30:2:-24;
 SNR_list2 = -23.5:0.5:0.5;
 SNR_list3 = 1:1:11;
 SNR_list4 = 11.5:2:29.5;
 
-
-dev_iter = 100; %iteracje
-
+% SNR_list1 = -2;
+% SNR_list2 = -1;
+% SNR_list3 = 0;
+% SNR_list4 = 1;
 
 for n = 1:4
     switch n
@@ -83,17 +98,34 @@ for n = 1:4
     devs_list = zeros(1, numel(SNR_list)); %1 wiersz - dewiacje, 2 wiersz - błąd średni
 
     for j = SNR_list
-        SNR = SNR_eqalizer + j;
+%         SNR1 = SNR_eqalizer1 + j;
+%         SNR2 = SNR_eqalizer2 + j;
+        SNR1 = j;
+        SNR2 = j;
         
         est_errors = zeros(1, dev_iter);
         lag_errors = zeros(1, dev_iter);
         for i = 1:dev_iter
         
-            noise1 = (randn(1, numel(signal)) + 1i*randn(1, numel(signal)))/db2mag(SNR);
-            noise2 = (randn(1, numel(signal2)) + 1i*randn(1, numel(signal2)))/db2mag(SNR);
+            noise1 = (randn(1, numel(signal)) + 1i*randn(1, numel(signal)));
+            noise2 = (randn(1, numel(signal2)) + 1i*randn(1, numel(signal2)));
+
+            check1 = snr(signal, noise1);
+%             check2 = snr(signal2, noise2);
+
+            db2mag(-SNR_eqalizer1);
+%             db2mag(-SNR_eqalizer2);
+
+            signaln = signal.*db2mag(-(check1-j));
+            signal2n = signal2*db2mag(-(check1-j));
+
+            check3 = snr(signaln, noise1);
+            check4 = snr(signal2n, noise2);
             
-            signaln = signal + noise1;
-            signal2n = signal2 + noise2;
+            signaln = signaln + noise1;
+            signal2n = signal2n + noise2;
+
+            check5 = snr(signaln, signal2n);
             
             % snr_value = snr(signal, noise1);
             
@@ -155,11 +187,8 @@ detailed_SNR = SNR_list1(1):0.5:SNR_list4(end);
 
 figure('Name', 'Deviations to SNR');
 plot(detailed_SNR, detailed_devs*10^(6)); %w us
-title('10000m, 10fs, 500 iteracji, interpfr')
+title('1000m, 10fs, 500 iteracji, interpfr')
 xlabel('SNR [dB]')
 ylabel('Odchylenie standardowe [us]')
 
 toc
-
-load gong.mat y
-sound(y)
