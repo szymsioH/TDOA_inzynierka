@@ -19,11 +19,11 @@ distance = 1000; %odległość w m
 delay = distance/c; %opóźnienie w s
 
 os_type = 2; %rodzaj interpolacji
-os_value = 2;
+os_value = 1;
 co_value = 1;
 fs = fs * os_value;
 
-dev_iter = 500; %iteracje
+dev_iter = 50; %iteracje
 
 delay_samples = delay*double(fs); %opóźnienie w próbkach
 
@@ -38,23 +38,29 @@ sig_drift = delay_samples - fix(delay_samples);
 signal2 = [zeros(1, round(delay_samples)), signal];
 signal = [signal, zeros(1, round(delay_samples))];
 
+type_name = '';
+
 switch os_type
     case 1
         %powielenie próbek sygnału
+        type_name = 'repelem';
         signal = repelem(signal, os_value);
         signal2 = repelem(signal2, os_value);
     case 2
         %interpolacja liniowa
+        type_name = 'interp1';
         range = 1:(1/os_value):numel(signal);
         signal = interp1(signal, range);
         range2 = 1:(1/os_value):numel(signal2);
         signal2 = interp1(signal2, range2);
     case 3
         %interpolacja fourierowska
+        type_name = 'interpfr';
         signal = interpft(signal, os_value*numel(signal));
         signal2 = interpft(signal2, os_value*numel(signal2));
     case 4
         %zwiększenie liczby próbek z dopasowaniem filtra dolnoprzepustowego
+        type_name = 'resample';
         signal = resample(signal, os_value, 1);
         signal2 = resample(signal2, os_value, 1);
     otherwise
@@ -76,12 +82,12 @@ SNR_eqalizer2 = snr2_check;
 SNR_list1 = -30:2:-24;
 SNR_list2 = -23.5:0.5:0.5;
 SNR_list3 = 1:1:11;
-SNR_list4 = 11.5:2:29.5;
+SNR_list4 = 11.5:2:15.5;
 
-% SNR_list1 = -2;
-% SNR_list2 = -1;
-% SNR_list3 = 0;
-% SNR_list4 = 1;
+% SNR_list1 = -150:10:0;
+% SNR_list2 = 1:1:2;
+% SNR_list3 = 3:4;
+% SNR_list4 = 5:10:30;
 
 for n = 1:4
     switch n
@@ -117,7 +123,7 @@ for n = 1:4
 %             db2mag(-SNR_eqalizer2);
 
             signaln = signal.*db2mag(-(check1-j));
-            signal2n = signal2*db2mag(-(check1-j));
+            signal2n = signal2.*db2mag(-(check1-j));
 
             check3 = snr(signaln, noise1);
             check4 = snr(signal2n, noise2);
@@ -186,9 +192,9 @@ detailed_devs = [detailed_devs1, detailed_devs(find(detailed_SNR == SNR_list2(1)
 detailed_SNR = SNR_list1(1):0.5:SNR_list4(end);
 
 figure('Name', 'Deviations to SNR');
-plot(detailed_SNR, detailed_devs*10^(6)); %w us
-title('1000m, 10fs, 500 iteracji, interpfr')
+plot(detailed_SNR, detailed_devs*10^(9)); %w ns
+title([num2str(distance), 'm, ', num2str(os_value), '*fs, ', num2str(dev_iter),  'iteracji, ', type_name])
 xlabel('SNR [dB]')
-ylabel('Odchylenie standardowe [us]')
+ylabel('Odchylenie standardowe [ns]')
 
 toc
