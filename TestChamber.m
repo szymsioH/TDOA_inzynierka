@@ -15,10 +15,10 @@ sig_time_new = numel(signal_dvbt)/50;
 signal = signal_dvbt(int64(numel(signal_dvbt)/3):int64(numel(signal_dvbt)/3 + sig_time_new - 1));
 
 %przesunięcie sygnałów
-distance = 1000; %odległość w m
+distance = 10000; %odległość w m
 delay = distance/c; %opóźnienie w s
 
-os_type = 2; %rodzaj interpolacji
+os_type = 0; %rodzaj interpolacji
 os_value = 1;
 co_value = 1;
 fs = fs * os_value;
@@ -39,6 +39,7 @@ signal2 = [zeros(1, round(delay_samples)), signal];
 signal = [signal, zeros(1, round(delay_samples))];
 
 type_name = '';
+corr_osval = '';
 
 switch os_type
     case 1
@@ -61,8 +62,8 @@ switch os_type
     case 4
         %zwiększenie liczby próbek z dopasowaniem filtra dolnoprzepustowego
         type_name = 'resample';
-        signal = resample(signal, os_value, 1);
-        signal2 = resample(signal2, os_value, 1);
+        signal = resample(signal, double(os_value), 1);
+        signal2 = resample(signal2, double(os_value), 1);
     otherwise
         os_value = 1;
 end
@@ -79,15 +80,15 @@ snr2_check = snr(signal2, noise2);
 SNR_eqalizer1 = snr_check; %wyrównanie poziomów sygnału i szumu
 SNR_eqalizer2 = snr2_check;
 
-SNR_list1 = -30:2:-24;
-SNR_list2 = -23.5:0.5:0.5;
-SNR_list3 = 1:1:11;
-SNR_list4 = 11.5:2:15.5;
+% SNR_list1 = -30:2:-24;
+% SNR_list2 = -23.5:0.5:0.5;
+% SNR_list3 = 1:1:11;
+% SNR_list4 = 11.5:2:15.5;
 
-% SNR_list1 = -150:10:0;
-% SNR_list2 = 1:1:2;
-% SNR_list3 = 3:4;
-% SNR_list4 = 5:10:30;
+SNR_list1 = -5:5:5;
+SNR_list2 = 10:5:20;
+SNR_list3 = 25:5:30;
+SNR_list4 = 35:5:160;
 
 for n = 1:4
     switch n
@@ -142,6 +143,7 @@ for n = 1:4
                 max_lag = -lag(corrval == max(corrval));
             else
                 %nadpróbkowanie korelacji
+                corr_osval = [' ov sampl * ', num2str(co_value)];
                 rangecorr = min(lag):(1/co_value):max(lag);
                 corrval_itp = interp1(lag, corrval, rangecorr, 'spline');
     
@@ -176,24 +178,24 @@ for n = 1:4
     end
 end
 
-range_temp = 1:find(detailed_SNR == SNR_list1(end));
-range_temp1 = SNR_list1(1):0.5:SNR_list1(end);
-detailed_devs1 = interp1(SNR_list1, detailed_devs(range_temp), range_temp1);
-
-range_temp = find(detailed_SNR == SNR_list3(1)):find(detailed_SNR == SNR_list3(end));
-range_temp3 = SNR_list3(1):0.5:SNR_list3(end);
-detailed_devs3 = interp1(SNR_list3, detailed_devs(range_temp), range_temp3);
-
-range_temp = find(detailed_SNR == SNR_list4(1)):find(detailed_SNR == SNR_list4(end));
-range_temp4 = SNR_list4(1):0.5:SNR_list4(end);
-detailed_devs4 = interp1(SNR_list4, detailed_devs(range_temp), range_temp4);
-
-detailed_devs = [detailed_devs1, detailed_devs(find(detailed_SNR == SNR_list2(1)):find(detailed_SNR == SNR_list2(end))), detailed_devs3, detailed_devs4];
-detailed_SNR = SNR_list1(1):0.5:SNR_list4(end);
+% range_temp = 1:find(detailed_SNR == SNR_list1(end));
+% range_temp1 = SNR_list1(1):0.5:SNR_list1(end);
+% detailed_devs1 = interp1(SNR_list1, detailed_devs(range_temp), range_temp1);
+% 
+% range_temp = find(detailed_SNR == SNR_list3(1)):find(detailed_SNR == SNR_list3(end));
+% range_temp3 = SNR_list3(1):0.5:SNR_list3(end);
+% detailed_devs3 = interp1(SNR_list3, detailed_devs(range_temp), range_temp3);
+% 
+% range_temp = find(detailed_SNR == SNR_list4(1)):find(detailed_SNR == SNR_list4(end));
+% range_temp4 = SNR_list4(1):0.5:SNR_list4(end);
+% detailed_devs4 = interp1(SNR_list4, detailed_devs(range_temp), range_temp4);
+% 
+% detailed_devs = [detailed_devs1, detailed_devs(find(detailed_SNR == SNR_list2(1)):find(detailed_SNR == SNR_list2(end))), detailed_devs3, detailed_devs4];
+% detailed_SNR = SNR_list1(1):0.5:SNR_list4(end);
 
 figure('Name', 'Deviations to SNR');
 plot(detailed_SNR, detailed_devs*10^(9)); %w ns
-title([num2str(distance), 'm, ', num2str(os_value), '*fs, ', num2str(dev_iter),  'iteracji, ', type_name])
+title([num2str(distance), 'm, ', num2str(os_value), '*fs, ', num2str(dev_iter),  'iteracji, ', type_name, corr_osval])
 xlabel('SNR [dB]')
 ylabel('Odchylenie standardowe [ns]')
 

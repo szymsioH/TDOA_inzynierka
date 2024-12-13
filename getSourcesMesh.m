@@ -40,7 +40,7 @@ function [mean_errors, deviations] = getSourcesMesh(x_car, c, fs, signal_dvbt, d
         for k = 1:iter
             sqrtsum = sqrtsum + (temp_errors_storage(k, 1) - mean_errors(j))^2;
         end
-        deviations(j) = sqrt(sqrtsum/iter)
+        deviations(j) = sqrt(sqrtsum/iter);
     end
     
     figure('Name', 'Sources Mesh Mean Errors' )
