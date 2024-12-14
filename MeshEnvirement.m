@@ -1,9 +1,28 @@
-clear workspace;
+clear all;
 
 tic
 
 %Wczytanie sygnału dvbt
 [signal_dvbt, fs, fc] = loadDVBTFunction('dvbt_signal.mat');
+
+%Wczytanie danych dotyczących błędów
+err_folder = 'C:\Users\szymo\OneDrive\Pulpit\Inz_repo\errors_and_snr_tables';
+cd(err_folder);
+
+file_name = '1000iter_10000dist_no_os.mat';
+
+if exist(file_name, 'file') ~= 2
+    error('Plik %s nie istnieje.', file_name);
+end
+
+snrs_data = load(file_name);
+
+deviations = transpose(snrs_data.allerr_list(2, :));
+SNRs_list = transpose(snrs_data.SNRs_list);
+
+%Powrót do folderu głównego
+folder = 'C:\Users\szymo\OneDrive\Pulpit\Inz_repo';
+cd(folder);
 
 %Wczytanie lokalizacji odbiorników
 [x_car, x_geo] = receiversPositionFunction();
@@ -15,13 +34,14 @@ options = optimoptions('fminunc','Algorithm','quasi-newton','Display','off');
 %Prędkość propagacji sygnału
 c = 299792458;
 
+%Ustawienia modelu
 os_type = 0; %rodzaj interpolacji
 os_value = 1;
 co_value = 1;
-iter_m = 5; %iteracje
+iter_m = 30; %iteracje
 
 %Stworzenie siatki nadajników
-mesh_range = -8000:1000:8000;
+mesh_range = -25000:1000:25000;
 [xsources, ysources] = meshgrid(mesh_range, mesh_range);
 ysources = flip(ysources);
 
@@ -43,7 +63,12 @@ for x = xsources
         SNR_dB = calcSnrFunction(c, fc, R);
         devs = zeros(1, 4);
         for d = 1:4
-            devs(d) = getDevsFunction(signal_dvbt, os_type, os_value, co_value, fs, SNR_dB(d), R(d));
+%             devs(d) = getDevsFunction(signal_dvbt, os_type, os_value, co_value, fs, SNR_dB(d), R(d));
+            diffs = abs(SNRs_list - SNR_dB(d));
+            [~, sortedIndices] = sort(diffs);
+            closest_devs = deviations(sortedIndices(1:2));
+            closest_SNRs = SNRs_list(sortedIndices(1:2));
+            devs(d) = interp1(closest_SNRs, closest_devs, SNR_dB(d));
         end
 
         TOAs = R/c;
@@ -71,13 +96,24 @@ for x = xsources
 end
 
 figure('Name', 'Mean Error');
-clim1 = [0 2000];
+clim1 = [0 5000];
 imagesc(xsources, ysources, mean_mesh, clim1)
 colorbar;
 xlabel('x [m]')
 ylabel('y [m]')
 axis xy
-title('Błąd średni względem położenia nadajnika')
+title('Błąd średni [m] względem położenia nadajnika')
+hold on
+plot(x_car(1, 2:5).', x_car(2, 2:5).', '^k', 'MarkerSize', 8, 'MarkerFaceColor', 'yellow');
+
+figure('Name', 'Standard Deviation');
+%clim1 = [0 2000];
+imagesc(xsources, ysources, dev_mesh)
+colorbar;
+xlabel('x [m]')
+ylabel('y [m]')
+axis xy
+title('Odchylenie Standardowe [m] względem położenia nadajnika')
 hold on
 plot(x_car(1, 2:5).', x_car(2, 2:5).', '^k', 'MarkerSize', 8, 'MarkerFaceColor', 'yellow');
 
