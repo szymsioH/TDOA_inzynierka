@@ -34,11 +34,15 @@ options = optimoptions('fminunc','Algorithm','quasi-newton','Display','off');
 %Prędkość propagacji sygnału
 c = 299792458;
 
+%obliczenie odchylenia stand. błędów synchronizacji
+syn_n_sigma = 1/(2*fs);
+
 %Ustawienia modelu
-os_type = 0; %rodzaj interpolacji
+os_type = 0; %rodzaj interpolacji (0, 1, 2, 3, 4)
 os_value = 1;
 co_value = 1;
 iter_m = 30; %iteracje
+is_synchro = 0; % 0 - bez błędów synchronizacji, 1 - z błędami
 
 %Stworzenie siatki nadajników
 mesh_range = -25000:1000:25000;
@@ -79,9 +83,18 @@ for x = xsources
             noises = [randi([-devs(1) devs(1)]);
                 randi([-devs(2) devs(2)]);
                 randi([-devs(3) devs(3)]);
-                randi([-devs(4) devs(4)]);];
+                randi([-devs(4) devs(4)])];
 
-            TOAs = TOAs + noises;
+            if is_synchro == 0
+                noises2 = zeros(4, 1);
+            elseif is_synchro == 1
+                noises2 = [randi([-syn_n_sigma syn_n_sigma]);
+                randi([-syn_n_sigma syn_n_sigma]);
+                randi([-syn_n_sigma syn_n_sigma]);
+                randi([-syn_n_sigma syn_n_sigma])];
+            end
+
+            TOAs = TOAs + noises + noises2;
 
             TDOAs = [-TOAs(1)+TOAs(2); -TOAs(1)+TOAs(3); -TOAs(1)+TOAs(4)];
             

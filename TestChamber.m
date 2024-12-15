@@ -6,46 +6,50 @@ distance = 10000; %odległość w m
 os_type = 0; %rodzaj interpolacji
 os_value = 1;
 co_value = 1;
-iters = 1000; %iteracje
+iters = 50; %iteracje
+SNR_list = [-30:2:-24, -23.5:0.5:0, 1:2:10, 10:5:160];
+% SNR_list = [-30:2:-24, -23.5:0.5:0, 1:2:40];
 
-[allerr_list, SNRs_list, type_name, corr_osval] = getErrsToSnrs(distance, os_type, os_value, co_value, iters);
-
-
-
-% [allerr_list2, SNRs_list2, type_name2, corr_osval2] = getErrsToSnrs(distance, os_type, os_value, 5, iters);
-% [allerr_list3, SNRs_list3, type_name3, corr_osval3] = getErrsToSnrs(distance, os_type, os_value, 10, iters);
+[allerr_list, SNRs_list, type_name, corr_osval] = getErrsToSnrs(distance, SNR_list, os_type, os_value, co_value, iters);
+[allerr_list2, SNRs_list2, type_name2, corr_osval2] = getErrsToSnrs(distance, SNR_list, os_type, os_value, 10, iters);
+[allerr_list3, SNRs_list3, type_name3, corr_osval3] = getErrsToSnrs(distance, SNR_list, os_type, os_value, 20, iters);
+[allerr_list4, SNRs_list4, type_name4, corr_osval4] = getErrsToSnrs(distance, SNR_list, os_type, os_value, 50, iters);
 
 figure('Name', 'Mean Error to SNR');
-plot(SNRs_list, allerr_list(1, :)*10^(9)); %w ns
+p1 = plot(SNRs_list, allerr_list(1, :)*10^(9), 'Color', [0 0.4470 0.7410], 'LineWidth', 1.5); 
+hold on;
+p2 = plot(SNRs_list, allerr_list2(1, :)*10^(9), 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 1.5);
+p3 = plot(SNRs_list, allerr_list3(1, :)*10^(9), 'Color', [0.9290 0.6940 0.1250], 'LineWidth', 1.5);
+p4 = plot(SNRs_list, allerr_list4(1, :)*10^(9), 'Color', [0.4940 0.1840 0.5560], 'LineWidth', 1.5);
 title([num2str(distance), 'm, ', num2str(os_value), '*fs, ', num2str(iters),  'iteracji, ', type_name, corr_osval])
 xlabel('SNR [dB]')
 ylabel('Średnia wartość błędu [ns]')
-hold on
-plot(SNRs_list, allerr_list2(1, :)*10^(9), 'Color', 'magenta');
-hold on
-plot(SNRs_list, allerr_list3(1, :)*10^(9), 'Color', 'green');
-legend('*1', '*5', '*10')
+legend([p1, p2, p3, p4], {'no os', '*10', '*20', '*50'}, 'Location', 'best')
+grid on
 
 figure('Name', 'Deviations to SNR');
-plot(SNRs_list, allerr_list(2, :)*10^(9)); %w ns
+p1 = plot(SNRs_list, allerr_list(2, :)*10^(9), 'Color', [0 0.4470 0.7410], 'LineWidth', 1.5); 
+hold on;
+p2 = plot(SNRs_list, allerr_list2(2, :)*10^(9), 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 1.5);
+p3 = plot(SNRs_list, allerr_list3(2, :)*10^(9), 'Color', [0.9290 0.6940 0.1250], 'LineWidth', 1.5);
+p4 = plot(SNRs_list, allerr_list4(2, :)*10^(9), 'Color', [0.4940 0.1840 0.5560], 'LineWidth', 1.5);
 title([num2str(distance), 'm, ', num2str(os_value), '*fs, ', num2str(iters),  'iteracji, ', type_name, corr_osval])
 xlabel('SNR [dB]')
 ylabel('Odchylenie standardowe [ns]')
-hold on
-plot(SNRs_list, allerr_list2(2, :)*10^(9), 'Color', 'magenta');
-hold on
-plot(SNRs_list, allerr_list3(2, :)*10^(9), 'Color', 'green');
-legend('*1', '*5', '*10')
+legend([p1, p2, p3, p4], {'no os', '*10', '*20', '*50'}, 'Location', 'best')
+grid on
 
 figure('Name', 'RMS to SNR');
-plot(SNRs_list, allerr_list(3, :)*10^(9)); %w ns
+p1 = plot(SNRs_list, allerr_list(3, :)*10^(9), 'Color', [0 0.4470 0.7410], 'LineWidth', 1.5); 
+hold on;
+p2 = plot(SNRs_list, allerr_list2(3, :)*10^(9), 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 1.5);
+p3 = plot(SNRs_list, allerr_list3(3, :)*10^(9), 'Color', [0.9290 0.6940 0.1250], 'LineWidth', 1.5);
+p4 = plot(SNRs_list, allerr_list4(3, :)*10^(9), 'Color', [0.4940 0.1840 0.5560], 'LineWidth', 1.5);
 title([num2str(distance), 'm, ', num2str(os_value), '*fs, ', num2str(iters),  'iteracji, ', type_name, corr_osval])
 xlabel('SNR [dB]')
 ylabel('RMS [ns]')
-hold on
-plot(SNRs_list, allerr_list2(3, :)*10^(9), 'Color', 'magenta');
-hold on
-plot(SNRs_list, allerr_list3(3, :)*10^(9), 'Color', 'green');
-legend('*1', '*5', '*10')
+legend([p1, p2, p3, p4], {'no os', '*10', '*20', '*50'}, 'Location', 'best')
+grid on
+
 
 toc
