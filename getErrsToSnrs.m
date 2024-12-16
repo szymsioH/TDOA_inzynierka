@@ -19,7 +19,7 @@ function [allerr_list, SNRs_list, type_name, corr_osval] = getErrsToSnrs(distanc
     sig_drift = delay_samples - fix(delay_samples);
 
 
-    signald = interp1(1:1:numel(signal), signal, 1+sig_drift:1:numel(signal)-1+sig_drift);
+    signald = interp1(1:1:numel(signal), signal, 1+sig_drift:1:numel(signal)-1+sig_drift, 'cubic');
     
     signal2 = [zeros(1, round(delay_samples)), signald];
     signal = [signal(1:end-1), zeros(1, round(delay_samples))];
@@ -48,8 +48,8 @@ function [allerr_list, SNRs_list, type_name, corr_osval] = getErrsToSnrs(distanc
         case 4
             %zwiększenie liczby próbek z dopasowaniem filtra dolnoprzepustowego
             type_name = 'resample';
-            signal = resample(signal, double(os_value), 1);
-            signal2 = resample(signal2, double(os_value), 1);
+            signal = resample(double(signal), double(os_value), 1);
+            signal2 = resample(double(signal2), double(os_value), 1);
         otherwise
             os_value = 1;
     end

@@ -2,6 +2,9 @@ clear all;
 
 tic
 
+folder = 'C:\Users\szymo\OneDrive\Pulpit\Inz_repo';
+cd(folder);
+
 %Wczytanie sygnału dvbt
 [signal_dvbt, fs, fc] = loadDVBTFunction('dvbt_signal.mat');
 
@@ -9,7 +12,7 @@ tic
 err_folder = 'C:\Users\szymo\OneDrive\Pulpit\Inz_repo\errors_and_snr_tables';
 cd(err_folder);
 
-file_name = '1000iter_10000dist_no_os.mat';
+file_name = '200iter_10000dist_corr_os.mat';
 
 if exist(file_name, 'file') ~= 2
     error('Plik %s nie istnieje.', file_name);
@@ -35,17 +38,17 @@ options = optimoptions('fminunc','Algorithm','quasi-newton','Display','off');
 c = 299792458;
 
 %obliczenie odchylenia stand. błędów synchronizacji
-syn_n_sigma = 1/(2*fs);
+syn_n_sigma = double(1/(2*double(fs)));
 
 %Ustawienia modelu
 os_type = 0; %rodzaj interpolacji (0, 1, 2, 3, 4)
 os_value = 1;
 co_value = 1;
 iter_m = 30; %iteracje
-is_synchro = 0; % 0 - bez błędów synchronizacji, 1 - z błędami
+is_synchro = 1; % 0 - bez błędów synchronizacji, 1 - z błędami
 
 %Stworzenie siatki nadajników
-mesh_range = -25000:1000:25000;
+mesh_range = -8000:250:8000;
 [xsources, ysources] = meshgrid(mesh_range, mesh_range);
 ysources = flip(ysources);
 
@@ -80,18 +83,22 @@ for x = xsources
         est_errors = zeros(1, iter_m);
         for i = 1:iter_m
             %TDOAs: 1 - o-w, 2 - o-i, 3 - u-s
-            noises = [randi([-devs(1) devs(1)]);
-                randi([-devs(2) devs(2)]);
-                randi([-devs(3) devs(3)]);
-                randi([-devs(4) devs(4)])];
+            noises = ((2*rand(4, 1))-1).*(devs.');
+
+%             noises = [randi([-devs(1) devs(1)]);
+%                 randi([-devs(2) devs(2)]);
+%                 randi([-devs(3) devs(3)]);
+%                 randi([-devs(4) devs(4)])];
 
             if is_synchro == 0
                 noises2 = zeros(4, 1);
             elseif is_synchro == 1
-                noises2 = [randi([-syn_n_sigma syn_n_sigma]);
-                randi([-syn_n_sigma syn_n_sigma]);
-                randi([-syn_n_sigma syn_n_sigma]);
-                randi([-syn_n_sigma syn_n_sigma])];
+                noises2 = ((2*rand(4, 1))-1)*syn_n_sigma;
+
+%                 noises2 = [randi([-syn_n_sigma syn_n_sigma]);
+%                 randi([-syn_n_sigma syn_n_sigma]);
+%                 randi([-syn_n_sigma syn_n_sigma]);
+%                 randi([-syn_n_sigma syn_n_sigma])];
             end
 
             TOAs = TOAs + noises + noises2;
@@ -109,7 +116,7 @@ for x = xsources
 end
 
 figure('Name', 'Mean Error');
-clim1 = [0 5000];
+clim1 = [0 4000];
 imagesc(xsources, ysources, mean_mesh, clim1)
 colorbar;
 xlabel('x [m]')
@@ -120,7 +127,7 @@ hold on
 plot(x_car(1, 2:5).', x_car(2, 2:5).', '^k', 'MarkerSize', 8, 'MarkerFaceColor', 'yellow');
 
 figure('Name', 'Standard Deviation');
-%clim1 = [0 2000];
+%clim2 = [10e-3 2000];
 imagesc(xsources, ysources, dev_mesh)
 colorbar;
 xlabel('x [m]')
@@ -130,16 +137,28 @@ title('Odchylenie Standardowe [m] względem położenia nadajnika')
 hold on
 plot(x_car(1, 2:5).', x_car(2, 2:5).', '^k', 'MarkerSize', 8, 'MarkerFaceColor', 'yellow');
 
+figure('Name', 'Root Mean Squere');
+clim3 = [0 4000];
+imagesc(xsources, ysources, rms_mesh, clim3)
+colorbar;
+xlabel('x [m]')
+ylabel('y [m]')
+axis xy
+title('Błąd Średniokwadratowy [m] względem położenia nadajnika')
+hold on
+plot(x_car(1, 2:5).', x_car(2, 2:5).', '^k', 'MarkerSize', 8, 'MarkerFaceColor', 'yellow');
+
 toc
 
-% R = linspace(1, 100e3, 1000);
+% R2 = linspace(1, 100e3, 1000);
 % 
-% SNR_dB = calcSnrFunction(c, fc, R);
+% SNR_dB = calcSnrFunction(c, fc, R2);
 % 
 % figure;
-% plot(R/1e3, SNR_dB)
+% plot(R2/1e3, SNR_dB)
 % xlabel('R [km]')
 % ylabel('SNR [dB]')
+% title('Poziom SNR [dB] względem odległości od nadajnika [km]')
 % grid on;
 
 function SNR_dB = calcSnrFunction(c, fc, R)
