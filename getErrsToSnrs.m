@@ -1,4 +1,4 @@
-function [allerr_list, SNRs_list, type_name, corr_osval] = getErrsToSnrs(distance, SNR_list, os_type, os_value, co_value, iters)
+function [allerr_list, SNRs_list, type_name, corr_osval] = getErrsToSnrs(distance, SNR_list, os_type, os_value, co_value, is_synchro, iters)
 
     %Wczytanie sygnału dvbt
     [signal_dvbt, fs, fc] = loadDVBTFunction('dvbt_signal.mat');
@@ -13,11 +13,20 @@ function [allerr_list, SNRs_list, type_name, corr_osval] = getErrsToSnrs(distanc
     
     %przesunięcie sygnałów
     delay = distance/c; %opóźnienie w s
-    
-    delay_samples = delay*double(fs); %opóźnienie w próbkach
+
+    %dodanie błędów synchronizacji
+    synchro_err = double(1/(2*double(fs)));
+    if is_synchro == 0
+        synh_rerr = 0;
+    elseif is_synchro == 1
+        synh_rerr = ((2*rand(1, iters))-1)*synchro_err;
+    end
+
+    new_delay = delay + synh_rerr;
+
+    delay_samples = new_delay*double(fs); %opóźnienie w próbkach
     
     sig_drift = delay_samples - fix(delay_samples);
-
 
     signald = interp1(1:1:numel(signal), signal, 1+sig_drift:1:numel(signal)-1+sig_drift, 'cubic');
     

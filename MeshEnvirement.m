@@ -95,10 +95,6 @@ for x = xsources
             elseif is_synchro == 1
                 noises2 = ((2*rand(4, 1))-1)*syn_n_sigma;
 
-%                 noises2 = [randi([-syn_n_sigma syn_n_sigma]);
-%                 randi([-syn_n_sigma syn_n_sigma]);
-%                 randi([-syn_n_sigma syn_n_sigma]);
-%                 randi([-syn_n_sigma syn_n_sigma])];
             end
 
             TOAs = TOAs + noises + noises2;
