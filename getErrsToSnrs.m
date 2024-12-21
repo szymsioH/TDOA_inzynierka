@@ -1,4 +1,4 @@
-function [allerr_list, SNRs_list, type_name, corr_osval] = getErrsToSnrs(distance, SNR_list, os_type, os_value, co_value, is_synchro, iters)
+function [allerr_list, SNRs_list, type_name, corr_osval] = getErrsToSnrs(distance, SNR_list, os_type, os_value, co_value, lin_cub, iters)
 
     %Wczytanie sygnału dvbt
     [signal_dvbt, fs, fc] = loadDVBTFunction('dvbt_signal.mat');
@@ -11,30 +11,27 @@ function [allerr_list, SNRs_list, type_name, corr_osval] = getErrsToSnrs(distanc
     
     signal = signal_dvbt(int64(numel(signal_dvbt)/3):int64(numel(signal_dvbt)/3 + sig_time_new - 1));
     
+    %zmienne do oversamplingu
+    type_name = '';
+    corr_osval = '';
+
     %przesunięcie sygnałów
     delay = distance/c; %opóźnienie w s
 
-    %dodanie błędów synchronizacji
-    synchro_err = double(1/(2*double(fs)));
-    if is_synchro == 0
-        synh_rerr = 0;
-    elseif is_synchro == 1
-        synh_rerr = ((2*rand(1, iters))-1)*synchro_err;
-    end
-
-    new_delay = delay + synh_rerr;
-
-    delay_samples = new_delay*double(fs); %opóźnienie w próbkach
+    delay_samples = delay*double(fs); %opóźnienie w próbkach
     
     sig_drift = delay_samples - fix(delay_samples);
 
-    signald = interp1(1:1:numel(signal), signal, 1+sig_drift:1:numel(signal)-1+sig_drift, 'cubic');
+    if lin_cub == 0
+        type_dinterp = 'linear';
+    elseif lin_cub == 1
+        type_dinterp = 'cubic';
+    end
     
-    signal2 = [zeros(1, round(delay_samples)), signald];
-    signal = [signal(1:end-1), zeros(1, round(delay_samples))];
+    signald = interp1(1:1:numel(signal), signal, 1+sig_drift:1:numel(signal)-1+sig_drift, type_dinterp);
     
-    type_name = '';
-    corr_osval = '';
+    signal2 = [zeros(1, ceil(delay_samples)), signald];
+    signal = [signal(1:end-1), zeros(1, ceil(delay_samples))];
     
     switch os_type
         case 1
@@ -116,9 +113,9 @@ function [allerr_list, SNRs_list, type_name, corr_osval] = getErrsToSnrs(distanc
             
             est_delay = double(max_lag)/(double(fs)); % wyestymowane opóźnienie w s
             
-            est_errors(i) = abs(delay - est_delay); %błąd estymaty w sekundach
+            est_errors(i) = (delay - est_delay); %błąd estymaty w sekundach
         end
-    
+
         allerr_list(1, iter_index) = mean(est_errors);
         allerr_list(2, iter_index) = std(est_errors);
         allerr_list(3, iter_index) = rms(est_errors);

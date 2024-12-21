@@ -159,7 +159,7 @@ toc
 
 function SNR_dB = calcSnrFunction(c, fc, R)
     %Dla Warszawa Raszyn:
-    ERP_lin = 100000;
+    ERP_lin = 50e3;
     ERP_dBW = 10*log10(ERP_lin);
     T0 = 2300;
     Gr = 1; % zysk anteny odbiorczej
