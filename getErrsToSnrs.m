@@ -1,4 +1,4 @@
-function [allerr_list, SNRs_list, type_name, corr_osval] = getErrsToSnrs(distance, SNR_list, os_type, os_value, co_value, lin_cub, iters)
+function [allerr_list, SNRs_list, type_name, corr_osval] = getErrsToSnrs(distance, sig_time, SNR_list, os_type, os_value, co_value, lin_cub, iters)
 
     %Wczytanie sygnału dvbt
     [signal_dvbt, fs, fc] = loadDVBTFunction('dvbt_signal.mat');
@@ -7,7 +7,11 @@ function [allerr_list, SNRs_list, type_name, corr_osval] = getErrsToSnrs(distanc
     c = 299792458;
     
     %skrócenie sygnału do 2ms
-    sig_time_new = numel(signal_dvbt)/50;
+    %sig_time - długość trwania impulsu w ms
+
+    time_dev_val = (numel(signal_dvbt)/double(fs))/(sig_time/1e3);
+
+    sig_time_new = numel(signal_dvbt)/time_dev_val;
     
     signal = signal_dvbt(int64(numel(signal_dvbt)/3):int64(numel(signal_dvbt)/3 + sig_time_new - 1));
     
