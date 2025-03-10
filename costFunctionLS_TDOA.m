@@ -7,11 +7,11 @@ function J = costFunctionLS_TDOA(x_hat, x_car, TDOAs, c)
     J = 0;
     for i = 1:N
         term1 = TDOAs(i) * c;
-        term2 = norm(x_hat - x_car(1:2, i+2));
-        term3 = norm(x_hat - x_car(1:2, 2));
-        J = J + (term1 - term2 + term3).^2;
+        term2 = norm(x_hat - x_car(1:2, i+3));
+        term3 = norm(x_hat - x_car(1:2, 3));
+        J = J + ((term1 - term2 + term3).^2);
     end
-
+    J = 1/N*J;
 
 %     J = 0;
 %     N = length(TDOAs);
@@ -20,7 +20,6 @@ function J = costFunctionLS_TDOA(x_hat, x_car, TDOAs, c)
 %         d = norm(x_hat(1:2) - x_car(1:2, i+2)) - norm(x_hat(1:2) - x_car(1:2, 2));
 %         J = J + ((d/c) - TDOAs(i))^2;
 %     end
-
 
 end
 

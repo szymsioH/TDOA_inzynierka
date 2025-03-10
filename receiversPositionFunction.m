@@ -20,6 +20,14 @@ function [x_car, x_geo] = receiversPositionFunction()
 %     h_szpital = 118.8;
     h_szpital = 0;
 
+%     phi_szpital = 53.01297;
+%     lambda_szpital = 20.95906 ;
+%     h_szpital = 0;
+
+%     phi_szpital = 53.009528388;
+%     lambda_szpital = 20.9263071083 ;
+%     h_szpital = 0;
+
     %PUNKT ODNIESIENIA
     phi_ref = 53.01735;
     lambda_ref = 20.90708;

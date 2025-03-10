@@ -100,10 +100,24 @@ function [allerr_list, SNRs_list, type_name, corr_osval] = getErrsToSnrs(distanc
             % snr_value = snr(signal, noise1);
             
             %korelacja
-            [corrval, lag] = xcorr(signaln, signal2n);
+            [corrval, lag] = xcorr(signaln, signal2n, 'normalized');
     
             if co_value == 1
                 max_lag = -lag(corrval == max(corrval));
+
+%                 figure
+%                 s1 = stem(-lag, db(corrval)+60, 'Color', [0 0.4470 0.7410], 'LineWidth', 1.3);
+%                 hold on
+%                 xlabel('Opóźnienie (w próbkach)')
+%                 ylabel('Wartość korelacji [dB]')
+%                 title(['Wykres korelacji dla przesunięcia = ', string(distance)])
+%                 ylim([10 70])
+%                 xlim([37 47])
+%                 grid on
+%                 l1 = xline(delay_samples, 'r.', 'LineWidth', 1);
+%                 legend([s1, l1], {'Wartości korelacji (po nadpróbkowaniu sygnałów)', 'Rzeczywista wartość opóźnienia'}, 'Location', 'best')
+%                 yticks(-60:10:120)
+%                 yticklabels(-120:10:120)     
             else
                 %nadpróbkowanie korelacji
                 corr_osval = [' ov sampl * ', num2str(co_value)];
@@ -113,8 +127,21 @@ function [allerr_list, SNRs_list, type_name, corr_osval] = getErrsToSnrs(distanc
     
 %                     [max_corr, max_idx] = max(corrval_itp);
                 max_lag = -rangecorr(corrval_itp == max(corrval_itp));
+%                 figure
+%                 s1 = stem(-rangecorr, db(corrval_itp)+60, 'Color', [0 0.4470 0.7410], 'LineWidth', 1.3);
+%                 hold on
+%                 xlabel('Opóźnienie (w próbkach)')
+%                 ylabel('Wartość korelacji [dB]')
+%                 title(['Wykres korelacji dla przesunięcia = ', string(distance)])
+%                 ylim([10 70])
+%                 xlim([37 47])
+%                 grid on
+%                 l1 = xline(delay_samples, 'r.', 'LineWidth', 1);
+%                 legend([s1, l1], {'Wartości korelacji (po nadpróbkowaniu sygnałów)', 'Rzeczywista wartość opóźnienia'}, 'Location', 'best')
+%                 yticks(-60:10:120)
+%                 yticklabels(-120:10:120)                   
             end
-            
+
             est_delay = double(max_lag)/(double(fs)); % wyestymowane opóźnienie w s
             
             est_errors(i) = (delay - est_delay); %błąd estymaty w sekundach
@@ -126,11 +153,11 @@ function [allerr_list, SNRs_list, type_name, corr_osval] = getErrsToSnrs(distanc
 
     end
     
-    range_new = SNR_list(1):0.5:SNR_list(end);
-    detailed_allerr = [interp1(SNR_list, allerr_list(1, :), range_new);
-        interp1(SNR_list, allerr_list(2, :), range_new);
-        interp1(SNR_list, allerr_list(3, :), range_new)];
-    
-    allerr_list = detailed_allerr;
+%     range_new = SNR_list(1):0.5:SNR_list(end);
+%     detailed_allerr = [interp1(SNR_list, allerr_list(1, :), range_new);
+%         interp1(SNR_list, allerr_list(2, :), range_new);
+%         interp1(SNR_list, allerr_list(3, :), range_new)];
+%     
+%     allerr_list = detailed_allerr;
     SNRs_list = SNR_list(1):0.5:SNR_list(end);
 end
